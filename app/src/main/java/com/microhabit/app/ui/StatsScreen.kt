@@ -29,14 +29,11 @@ import com.microhabit.app.viewmodel.StatsData
 
 val suppressWords = setOf("木了", "空了", "软了", "沉了", "发懵")
 val activateWords = setOf("紧绷", "焦灼", "亢奋", "烦躁")
-val suppressColor = Color(0xFF78909C)
-val activateColor = Color(0xFFEF5350)
-val balanceColor  = Color(0xFF66BB6A)
 
 fun stateWordColor(word: String): Color = when (word) {
-    in suppressWords -> suppressColor
-    in activateWords -> activateColor
-    else -> balanceColor
+    in suppressWords -> Color(0xFF78909C)
+    in activateWords -> Color(0xFFEF5350)
+    else -> Color(0xFF66BB6A)
 }
 
 @Composable
@@ -50,7 +47,8 @@ fun StatsScreen(vm: HabitViewModel, modifier: Modifier = Modifier) {
                 Text("📭", fontSize = 48.sp)
                 Spacer(Modifier.height(12.dp))
                 Text("还没有记录", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f))
-                Text("先去打个卡吧", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
+                Text("先去打个卡吧", fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
             }
         }
         return
@@ -61,35 +59,37 @@ fun StatsScreen(vm: HabitViewModel, modifier: Modifier = Modifier) {
             .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("统计", fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 4.dp))
+        Text("统计", fontSize = 24.sp, fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 4.dp))
 
-        // 概览三格
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             SummaryCard("累计记录", "${stats.totalRecords} 次", Modifier.weight(1f))
-            SummaryCard("平均能量", "%.1f 分".format(stats.avgEnergy), Modifier.weight(1f), highlight = stats.avgEnergy < 2f)
-            SummaryCard("连续打卡", "${stats.streakDays} 天", Modifier.weight(1f), badge = if (stats.streakDays >= 7) "🔥" else null)
+            SummaryCard("平均能量", "%.1f 分".format(stats.avgEnergy), Modifier.weight(1f),
+                highlight = stats.avgEnergy < 2f)
+            SummaryCard("连续打卡", "${stats.streakDays} 天", Modifier.weight(1f),
+                badge = if (stats.streakDays >= 7) "🔥" else null)
         }
 
-        // 折线图
         if (stats.dailyStats.isNotEmpty()) {
             SectionCard("近14天能量趋势") { EnergyLineChart(dailyStats = stats.dailyStats) }
         }
 
-        // 饼图 + 图例
         if (stats.stateWordStats.isNotEmpty()) {
             SectionCard("状态词分布（近30天）") {
+                val total = stats.stateWordStats.sumOf { it.count }.toFloat()
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     StateWordPieChart(stats = stats.stateWordStats, modifier = Modifier.size(140.dp))
                     Spacer(Modifier.width(16.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        val total = stats.stateWordStats.sumOf { it.count }.toFloat()
                         stats.stateWordStats.take(6).forEach { item ->
                             val pct = if (total > 0) item.count / total * 100 else 0f
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.size(10.dp).background(stateWordColor(item.stateWord), RoundedCornerShape(2.dp)))
+                                Box(Modifier.size(10.dp)
+                                    .background(stateWordColor(item.stateWord), RoundedCornerShape(2.dp)))
                                 Spacer(Modifier.width(6.dp))
                                 Text(item.stateWord, fontSize = 12.sp, modifier = Modifier.weight(1f))
-                                Text("%.0f%%".format(pct), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.5f))
+                                Text("%.0f%%".format(pct), fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(0.5f))
                             }
                         }
                     }
@@ -97,17 +97,14 @@ fun StatsScreen(vm: HabitViewModel, modifier: Modifier = Modifier) {
             }
         }
 
-        // 柱状图
         if (stats.stateWordStats.isNotEmpty()) {
             SectionCard("状态词频次") { StateWordBarChart(stats = stats.stateWordStats) }
         }
 
-        // 锚点频率
         if (stats.anchorFreq.isNotEmpty()) {
             SectionCard("锚点打卡频率") { AnchorFreqChart(freq = stats.anchorFreq) }
         }
 
-        // 神经系统解读
         SectionCard("神经系统小结") { NervousSystemSummary(stats = stats) }
 
         Spacer(Modifier.height(8.dp))
@@ -115,20 +112,29 @@ fun StatsScreen(vm: HabitViewModel, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun SummaryCard(label: String, value: String, modifier: Modifier = Modifier, highlight: Boolean = false, badge: String? = null) {
+fun SummaryCard(
+    label: String, value: String,
+    modifier: Modifier = Modifier,
+    highlight: Boolean = false,
+    badge: String? = null
+) {
     Card(
         modifier = modifier, shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (highlight) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant
+            containerColor = if (highlight) MaterialTheme.colorScheme.errorContainer
+            else MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
-        Column(modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally) {
             if (badge != null) Text(badge, fontSize = 16.sp)
             Text(value, fontSize = 18.sp, fontWeight = FontWeight.Bold,
-                color = if (highlight) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (highlight) MaterialTheme.colorScheme.error
+                else MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center)
             Spacer(Modifier.height(4.dp))
-            Text(label, fontSize = 11.sp, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
+            Text(label, fontSize = 11.sp, textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
         }
     }
 }
@@ -142,7 +148,8 @@ fun SectionCard(title: String, content: @Composable ColumnScope.() -> Unit) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+            Text(title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
             Spacer(Modifier.height(12.dp))
             content()
         }
@@ -151,7 +158,11 @@ fun SectionCard(title: String, content: @Composable ColumnScope.() -> Unit) {
 
 @Composable
 fun EnergyLineChart(dailyStats: List<DailyStat>) {
-    val animProgress by animateFloatAsState(targetValue = 1f, animationSpec = tween(800, easing = EaseInOutCubic), label = "line")
+    val animProgress by animateFloatAsState(
+        targetValue = 1f,
+        animationSpec = tween(800, easing = EaseInOutCubic),
+        label = "line"
+    )
     val primary = MaterialTheme.colorScheme.primary
     val errorColor = MaterialTheme.colorScheme.error
     val gridColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
@@ -160,37 +171,38 @@ fun EnergyLineChart(dailyStats: List<DailyStat>) {
         Canvas(modifier = Modifier.fillMaxWidth().height(130.dp)) {
             if (dailyStats.isEmpty()) return@Canvas
             val w = size.width; val h = size.height
-            val maxS = 5f; val minS = 1f; val range = maxS - minS
 
-            fun xOf(i: Int) = if (dailyStats.size == 1) w / 2f else i * w / (dailyStats.size - 1).toFloat()
-            fun yOf(score: Float) = h - ((score - minS) / range * h * 0.82f + h * 0.06f)
+            fun xOf(i: Int) = if (dailyStats.size == 1) w / 2f
+                else i * w / (dailyStats.size - 1).toFloat()
+            fun yOf(score: Float) = h - ((score - 1f) / 4f * h * 0.82f + h * 0.06f)
 
-            // 网格
             for (lvl in 1..5) {
                 val y = yOf(lvl.toFloat())
                 drawLine(gridColor, Offset(0f, y), Offset(w, y), strokeWidth = 0.8.dp.toPx())
             }
 
-            // 填充
             val fillPath = Path()
             dailyStats.forEachIndexed { i, s ->
-                val x = xOf(i); val y = h - (h - yOf(s.avgScore)) * animProgress
+                val x = xOf(i)
+                val y = h - (h - yOf(s.avgScore)) * animProgress
                 if (i == 0) fillPath.moveTo(x, y) else fillPath.lineTo(x, y)
             }
-            fillPath.lineTo(xOf(dailyStats.lastIndex), h); fillPath.lineTo(xOf(0), h); fillPath.close()
+            fillPath.lineTo(xOf(dailyStats.lastIndex), h)
+            fillPath.lineTo(xOf(0), h)
+            fillPath.close()
             drawPath(fillPath, primary.copy(alpha = 0.08f))
 
-            // 折线
             val linePath = Path()
             dailyStats.forEachIndexed { i, s ->
-                val x = xOf(i); val y = h - (h - yOf(s.avgScore)) * animProgress
+                val x = xOf(i)
+                val y = h - (h - yOf(s.avgScore)) * animProgress
                 if (i == 0) linePath.moveTo(x, y) else linePath.lineTo(x, y)
             }
             drawPath(linePath, primary, style = Stroke(2.dp.toPx(), cap = StrokeCap.Round))
 
-            // 数据点
             dailyStats.forEachIndexed { i, s ->
-                val x = xOf(i); val y = h - (h - yOf(s.avgScore)) * animProgress
+                val x = xOf(i)
+                val y = h - (h - yOf(s.avgScore)) * animProgress
                 val dotColor = if (s.avgScore < 2f) errorColor else primary
                 drawCircle(dotColor, 4.dp.toPx(), Offset(x, y))
                 drawCircle(Color.White, 2.dp.toPx(), Offset(x, y))
@@ -201,8 +213,9 @@ fun EnergyLineChart(dailyStats: List<DailyStat>) {
         Row(modifier = Modifier.fillMaxWidth()) {
             val step = if (dailyStats.size <= 7) 1 else dailyStats.size / 7
             dailyStats.filterIndexed { i, _ -> i % step == 0 }.forEach { day ->
-                Text(day.date.takeLast(2) + "日", fontSize = 9.sp, modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurface.copy(0.35f))
+                Text(day.date.takeLast(2) + "日", fontSize = 9.sp,
+                    modifier = Modifier.weight(1f), textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurface.copy(0.35f))
             }
         }
         Spacer(Modifier.height(8.dp))
@@ -218,7 +231,11 @@ fun EnergyLineChart(dailyStats: List<DailyStat>) {
 
 @Composable
 fun StateWordPieChart(stats: List<StateWordStat>, modifier: Modifier = Modifier) {
-    val animProgress by animateFloatAsState(targetValue = 1f, animationSpec = tween(900, easing = EaseOutCubic), label = "pie")
+    val animProgress by animateFloatAsState(
+        targetValue = 1f,
+        animationSpec = tween(900, easing = EaseOutCubic),
+        label = "pie"
+    )
     val total = stats.sumOf { it.count }.toFloat()
     Canvas(modifier = modifier) {
         val radius = size.minDimension / 2f
@@ -227,13 +244,15 @@ fun StateWordPieChart(stats: List<StateWordStat>, modifier: Modifier = Modifier)
         stats.forEach { item ->
             val sweep = (item.count / total) * 360f * animProgress
             drawArc(stateWordColor(item.stateWord), startAngle, sweep, useCenter = true,
-                topLeft = Offset(center.x - radius, center.y - radius), size = Size(radius * 2, radius * 2))
+                topLeft = Offset(center.x - radius, center.y - radius),
+                size = Size(radius * 2, radius * 2))
             drawArc(Color.White, startAngle, sweep, useCenter = true,
-                topLeft = Offset(center.x - radius, center.y - radius), size = Size(radius * 2, radius * 2),
+                topLeft = Offset(center.x - radius, center.y - radius),
+                size = Size(radius * 2, radius * 2),
                 style = Stroke(2.dp.toPx()))
             startAngle += sweep
         }
-        drawCircle(Color.White, radius * 0.45f, center) // 甜甜圈中心
+        drawCircle(Color.White, radius * 0.45f, center)
     }
 }
 
@@ -243,15 +262,25 @@ fun StateWordBarChart(stats: List<StateWordStat>) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         stats.forEach { item ->
             val targetRatio = if (maxCount > 0) item.count / maxCount else 0f
-            val animRatio by animateFloatAsState(targetValue = targetRatio, animationSpec = tween(600), label = "bar_${item.stateWord}")
+            val animRatio by animateFloatAsState(
+                targetValue = targetRatio,
+                animationSpec = tween(600),
+                label = "bar_${item.stateWord}"
+            )
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Text(item.stateWord, fontSize = 13.sp, modifier = Modifier.width(42.dp))
                 Spacer(Modifier.width(8.dp))
-                Box(Modifier.weight(1f).height(20.dp).clip(RoundedCornerShape(4.dp)).background(MaterialTheme.colorScheme.surfaceVariant)) {
-                    Box(Modifier.fillMaxHeight().fillMaxWidth(animRatio).clip(RoundedCornerShape(4.dp)).background(stateWordColor(item.stateWord).copy(0.8f)))
+                Box(Modifier.weight(1f).height(20.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)) {
+                    Box(Modifier.fillMaxHeight().fillMaxWidth(animRatio)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(stateWordColor(item.stateWord).copy(0.8f)))
                 }
                 Spacer(Modifier.width(8.dp))
-                Text("${item.count}次", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.5f), modifier = Modifier.width(32.dp))
+                Text("${item.count}次", fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(0.5f),
+                    modifier = Modifier.width(32.dp))
             }
         }
     }
@@ -260,19 +289,32 @@ fun StateWordBarChart(stats: List<StateWordStat>) {
 @Composable
 fun AnchorFreqChart(freq: Map<String, Int>) {
     val total = freq.values.sum().toFloat()
-    val colors = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.tertiary)
+    val colors = listOf(
+        MaterialTheme.colorScheme.primary,
+        MaterialTheme.colorScheme.secondary,
+        MaterialTheme.colorScheme.tertiary
+    )
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         freq.entries.toList().forEachIndexed { i, (anchor, count) ->
             val targetRatio = if (total > 0) count / total else 0f
-            val animRatio by animateFloatAsState(targetValue = targetRatio, animationSpec = tween(600), label = "anchor_$i")
+            val animRatio by animateFloatAsState(
+                targetValue = targetRatio,
+                animationSpec = tween(600),
+                label = "anchor_$i"
+            )
             val color = colors.getOrElse(i) { colors[0] }
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(anchor.replace("锚点", ""), fontSize = 13.sp)
-                    Text("$count 次  ${"%.0f".format(targetRatio * 100)}%", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.5f))
+                    Text("$count 次  ${"%.0f".format(targetRatio * 100)}%",
+                        fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.5f))
                 }
-                Box(Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)).background(MaterialTheme.colorScheme.surfaceVariant)) {
-                    Box(Modifier.fillMaxHeight().fillMaxWidth(animRatio).clip(RoundedCornerShape(5.dp)).background(color.copy(0.8f)))
+                Box(Modifier.fillMaxWidth().height(10.dp)
+                    .clip(RoundedCornerShape(5.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)) {
+                    Box(Modifier.fillMaxHeight().fillMaxWidth(animRatio)
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(color.copy(0.8f)))
                 }
             }
         }
@@ -296,5 +338,6 @@ fun NervousSystemSummary(stats: StatsData) {
         else ->
             "🌿 整体状态在正常波动范围内。继续保持记录，帮助你看见自己的神经系统节律。"
     }
-    Text(summary, fontSize = 14.sp, lineHeight = 22.sp, color = MaterialTheme.colorScheme.onSurface.copy(0.8f))
+    Text(summary, fontSize = 14.sp, lineHeight = 22.sp,
+        color = MaterialTheme.colorScheme.onSurface.copy(0.8f))
 }
